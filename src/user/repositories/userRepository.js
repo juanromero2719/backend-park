@@ -34,7 +34,7 @@ export async function obtenerUsuarioPorCedula(numero_cedula) {
 
   const { data, error } = await supabase
     .from('usuario')
-    .select('numero_cedula, nombre_completo, telefono, correo_electronico')
+    .select('numero_cedula, nombre_completo, telefono, correo_electronico, rol_codigo')
     .eq('numero_cedula', numero_cedula)
     .maybeSingle()
 
@@ -47,7 +47,7 @@ export async function listarUsuarios({ limit = 50, offset = 0 } = {}) {
   
   const { data, error } = await supabase
     .from('usuario')
-    .select('numero_cedula, nombre_completo, telefono, correo_electronico')
+    .select('numero_cedula, nombre_completo, telefono, correo_electronico, rol_codigo')
     .range(offset, offset + limit - 1)
 
   if (error) throw error

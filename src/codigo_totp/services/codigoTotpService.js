@@ -44,6 +44,11 @@ export async function enviarCodigoTotp({ correoElectronico, minutosExpiracion = 
   const codigo = generarCodigoTotp()
   await guardarCodigoTotp({ correoElectronico, codigo, expiraEn: minutosExpiracion })
 
+  const emailDisabled = String(process.env.EMAIL_DISABLED || '').toLowerCase() === 'true'
+  if (emailDisabled) {
+    return { enviadoA: correoElectronico, emailEnviado: false }
+  }
+
   const transporter = crearTransporterCorreo()
   const from = process.env.MAIL_FROM || process.env.SMTP_USER
 
@@ -55,7 +60,7 @@ export async function enviarCodigoTotp({ correoElectronico, minutosExpiracion = 
     html: `<p>Tu código es <b>${codigo}</b>. Expira en ${minutosExpiracion} minutos.</p>`,
   })
 
-  return { enviadoA: correoElectronico }
+  return { enviadoA: correoElectronico, emailEnviado: true }
 }
 
 export async function verificarCodigoTotp({ correoElectronico, codigo }) {
@@ -77,7 +82,7 @@ export async function verificarCodigoTotp({ correoElectronico, codigo }) {
   return { verificado: true }
 }
 
-export async function autenticarPorTotp({ numeroCedula, codigo, jwtExpiresIn = '15m' }) {
+export async function autenticarPorTotp({ numeroCedula, codigo, jwtExpiresIn }) {
 
   if (!numeroCedula || !codigo) {
     const err = new Error('numeroCedula y codigo son requeridos')
@@ -114,15 +119,18 @@ export async function autenticarPorTotp({ numeroCedula, codigo, jwtExpiresIn = '
     sub: usuario.numero_cedula,
     nombreCompleto: usuario.nombre_completo,
     correoElectronico: usuario.correo_electronico,
+    rol: usuario.rol_codigo,
   }
+
+  const effectiveExpiresIn = jwtExpiresIn || process.env.JWT_EXPIRES_IN || '15m'
 
   const token = jwt.sign(payload, secret, {
     issuer: 'backend-park',
     audience: 'frontend-clients',
-    expiresIn: jwtExpiresIn,
+    expiresIn: effectiveExpiresIn,
   })
 
-  return { token, tipo: 'Bearer', expiraEn: jwtExpiresIn }
+  return { token, tipo: 'Bearer', expiraEn: effectiveExpiresIn }
 }
 
 
